@@ -1,0 +1,38 @@
+laravel: '@testbench'
+
+providers:
+  - Livewire\LivewireServiceProvider
+  - SchenkeIo\LaravelGa4Marketing\Workbench\App\Providers\WorkbenchServiceProvider
+  - SchenkeIo\LaravelGa4Marketing\Ga4MarketingServiceProvider
+
+migrations:
+  - workbench/database/migrations
+
+seeders:
+  - SchenkeIo\LaravelGa4Marketing\Workbench\Database\Seeders\DatabaseSeeder
+
+env:
+  DB_CONNECTION: sqlite
+  DB_DATABASE: workbench/database/database.sqlite
+  CACHE_STORE: file
+
+workbench:
+  welcome: false
+  start: '/'
+  install: true
+  health: false
+  discovers:
+    web: true
+    api: true
+    commands: true
+    components: true
+    factories: true
+    views: true
+  build:
+    - asset-publish
+  assets:
+    - laravel-assets
+  sync:
+    - from: storage
+      to: workbench/storage
+      reverse: true

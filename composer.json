@@ -1,0 +1,115 @@
+{
+    "name": "schenke-io/laravel-ga4-marketing",
+    "description": "GA4 Marketing integration for Laravel",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "SchenkeIo\\LaravelGa4Marketing\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SchenkeIo\\LaravelGa4Marketing\\Tests\\": "tests/",
+            "SchenkeIo\\LaravelGa4Marketing\\Workbench\\": "workbench/",
+            "SchenkeIo\\LaravelGa4Marketing\\Workbench\\App\\": "workbench/app/",
+            "SchenkeIo\\LaravelGa4Marketing\\Workbench\\Database\\Factories\\": "workbench/database/factories/",
+            "SchenkeIo\\LaravelGa4Marketing\\Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
+        }
+    },
+    "require": {
+        "php": "^8.3",
+        "illuminate/contracts": "^12.0 | ^13.0",
+        "illuminate/http": "^12.0 | ^13.0",
+        "illuminate/routing": "^12.0 | ^13.0",
+        "illuminate/support": "^12.0 | ^13.0",
+        "illuminate/validation": "^12.0 | ^13.0",
+        "livewire/livewire": "^3.0",
+        "spatie/laravel-package-tools": "^1.0"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.0",
+        "laravel/boost": "*",
+        "laravel/pint": "^1.24",
+        "orchestra/testbench": "^10.9 | ^11.0",
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-browser": "^4.1",
+        "schenke-io/packaging-tools": "^0.2",
+        "spatie/laravel-ray": "^1.40"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "SchenkeIo\\LaravelGa4Marketing\\Ga4MarketingServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "dev": "SchenkeIo\\PackagingTools\\DeveloperMenu::handle",
+        "test": "vendor/bin/pest",
+        "coverage": "vendor/bin/pest --coverage",
+        "pint": "vendor/bin/pint",
+        "setup": "SchenkeIo\\PackagingTools\\Setup::handle",
+        "low": "composer update --prefer-lowest --prefer-dist",
+        "stable": "composer update --prefer-stable --prefer-dist",
+        "analyse": "vendor/bin/phpstan analyse",
+        "js-test": "npm test",
+        "markdown": "@php vendor/bin/testbench workbench:make-readme",
+        "refresh": "vendor/bin/testbench migrate:fresh ",
+        "check": [
+            "@pint",
+            "@test",
+            "@markdown"
+        ],
+        "release": [
+            "@compile",
+            "@pint",
+            "@analyse",
+            "@js-test",
+            "@coverage",
+            "@markdown"
+        ],
+        "relation": "@php vendor/bin/testbench relation-manager:run",
+        "add": [],
+        "menu": "SchenkeIo\\PackagingTools\\DeveloperMenu::handle",
+        "serve": [
+            "Composer\\Config::disableProcessTimeout",
+            "@build",
+            "@php vendor/bin/testbench serve --ansi"
+        ],
+        "post-autoload-dump": [
+            "@clear",
+            "@prepare"
+        ],
+        "clear": "@php vendor/bin/testbench package:purge-skeleton --ansi",
+        "prepare": "@php vendor/bin/testbench package:discover --ansi",
+        "build": [
+            "touch workbench/database/database.sqlite",
+            "rm workbench/database/database.sqlite",
+            "touch workbench/database/database.sqlite",
+            "@compile",
+            "@php vendor/bin/testbench workbench:build --ansi",
+            "vendor/bin/testbench migrate:fresh"
+        ],
+        "compile": "npm run build",
+        "lint": [
+            "@php vendor/bin/pint --ansi",
+            "@php vendor/bin/phpstan analyse --verbose --ansi"
+        ],
+        "clear-cache-all": [
+            "vendor/bin/testbench  optimize:clear",
+            "vendor/bin/testbench  view:clear",
+            "vendor/bin/testbench  route:clear",
+            "vendor/bin/testbench  config:clear",
+            "vendor/bin/testbench  cache:clear"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

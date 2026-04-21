@@ -1,0 +1,260 @@
+<?php
+
+namespace SchenkeIo\LaravelGa4Marketing\Services;
+
+use Illuminate\Cache\RateLimiter;
+use Illuminate\Contracts\Bus\Dispatcher;
+use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Http\Client\Factory;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use SchenkeIo\LaravelGa4Marketing\Jobs\SendAnalyticsEventJob;
+
+/**
+ * @method void pageView(string $pageLocation, ?string $pageTitle = null, ?string $pageReferrer = null, ?string $language = null)
+ * @method void click(string $linkUrl, ?string $linkText = null, ?string $linkId = null, ?string $linkClasses = null, ?string $linkDomain = null, ?bool $outbound = null)
+ * @method void login(string $method)
+ * @method void signUp(string $method)
+ * @method void share(string $method, string $contentType, string $itemId)
+ * @method void search(string $searchTerm)
+ * @method void viewItem(array<int, mixed> $items, ?string $currency = null, ?float $value = null)
+ * @method void addToCart(array<int, mixed> $items, ?string $currency = null, ?float $value = null)
+ * @method void beginCheckout(array<int, mixed> $items, ?string $currency = null, ?float $value = null, ?string $coupon = null)
+ * @method void purchase(string $transactionId, array<int, mixed> $items, float $value, ?string $currency = null, ?float $tax = null, ?float $shipping = null, ?string $coupon = null)
+ * @method void scroll(int $percentScrolled)
+ * @method void fileDownload(string $fileName, string $extension, string $linkUrl, ?string $linkText = null, ?string $linkId = null, ?string $linkClasses = null, ?string $linkDomain = null)
+ * @method void calculatorUsed(array<string, mixed> $params)
+ */
+class AnalyticsService
+{
+    protected ?string $userId = null;
+
+    protected bool $debugMode = false;
+
+    /**
+     * @param  array<string, mixed>  $config
+     */
+    public function __construct(
+        protected ClientIdGenerator $clientIdGenerator,
+        protected BotDetector $botDetector,
+        protected EventValidator $eventValidator,
+        protected EventMapper $eventMapper,
+        protected SessionManager $sessionManager,
+        protected PayloadBuilder $payloadBuilder,
+        protected array $config = [],
+        protected ?Factory $http = null,
+        protected ?RateLimiter $rateLimiter = null,
+        protected ?Request $request = null,
+        protected ?ExceptionHandler $handler = null,
+        protected ?Dispatcher $bus = null
+    ) {}
+
+    /**
+     * Set the user ID for the current session.
+     */
+    public function setUserId(?string $userId): self
+    {
+        $this->userId = $userId;
+
+        return $this;
+    }
+
+    /**
+     * Enable or disable debug mode for this instance.
+     */
+    public function setDebugMode(bool $debugMode): self
+    {
+        $this->debugMode = $debugMode;
+
+        return $this;
+    }
+
+    /**
+     * Send an event to GA4 immediately.
+     *
+     * @param  string  $clientId  The unique ID for the client
+     * @param  string  $eventName  The name of the event
+     * @param  array<string, mixed>  $eventParams  Additional parameters for the event
+     * @param  string|null  $userId  Optional user ID
+     */
+    public function sendEvent(string $clientId, string $eventName, array $eventParams = [], ?string $userId = null): void
+    {
+        $measurementId = $this->getConfig('ga4.measurement_id');
+        $apiSecret = $this->getConfig('ga4.api_secret');
+
+        if (! $measurementId || ! $apiSecret) {
+            return;
+        }
+
+        if ($this->getConfig('ga4.rate_limit.enabled', true)) {
+            $maxAttempts = $this->getConfig('ga4.rate_limit.max_attempts', 30);
+            $decaySeconds = $this->getConfig('ga4.rate_limit.decay_seconds', 60);
+
+            if ($this->rateLimiter && $this->rateLimiter->tooManyAttempts('ga4-marketing-event:'.$clientId, $maxAttempts)) {
+                return;
+            }
+
+            $this->rateLimiter?->hit('ga4-marketing-event:'.$clientId, $decaySeconds);
+        }
+
+        $eventName = $this->eventValidator->validateName($eventName);
+
+        $baseUrl = 'https://www.google-analytics.com/mp/collect';
+
+        if ($this->debugMode || $this->getConfig('ga4.debug_mode')) {
+            $eventParams['debug_mode'] = 1;
+            if ($this->debugMode) {
+                $baseUrl = 'https://www.google-analytics.com/debug/mp/collect';
+            }
+        }
+
+        $sessionData = $this->sessionManager->getSessionData($clientId);
+        $payload = $this->payloadBuilder->build(
+            $clientId,
+            $userId ?? $this->userId,
+            $eventName,
+            $eventParams,
+            $sessionData,
+            $this->getIpAddress()
+        );
+
+        try {
+            $this->http?->timeout(2)->post("{$baseUrl}?measurement_id={$measurementId}&api_secret={$apiSecret}", $payload);
+        } catch (\Throwable $e) {
+            $this->handler?->report($e);
+        }
+    }
+
+    protected function getIpAddress(): ?string
+    {
+        $request = $this->request ?: (function_exists('request') ? request() : null);
+
+        return $request?->ip();
+    }
+
+    protected function getConfig(string $key, mixed $default = null): mixed
+    {
+        $parts = explode('.', $key);
+        $current = $this->config;
+        foreach ($parts as $part) {
+            if (is_array($current) && array_key_exists($part, $current)) {
+                $current = $current[$part];
+            } else {
+                return $default;
+            }
+        }
+
+        return $current;
+    }
+
+    /**
+     * Queue an event for asynchronous sending to GA4.
+     *
+     * @param  array<string, mixed>  $eventParams
+     */
+    public function queueEvent(string $clientId, string $eventName, array $eventParams = [], ?string $userId = null): void
+    {
+        if ($this->bus) {
+            $this->bus->dispatch(new SendAnalyticsEventJob($clientId, $eventName, $eventParams, $userId ?? $this->userId));
+        } else {
+            SendAnalyticsEventJob::dispatch($clientId, $eventName, $eventParams, $userId ?? $this->userId);
+        }
+    }
+
+    /**
+     * Handle dynamic calls to event helper methods.
+     *
+     * @param  array<int, mixed>  $arguments
+     *
+     * @phpstan-ignore-next-line
+     */
+    public function __call(string $name, array $arguments)
+    {
+        $params = $this->eventMapper->mapArgumentsToParams($name, $arguments);
+        $this->sendEvent($this->getClientId(), $name, $params);
+    }
+
+    /**
+     * Generate a unique client ID based on IP address and User Agent.
+     */
+    public function generateClientId(?string $ipAddress, ?string $userAgent): string
+    {
+        return $this->clientIdGenerator->generate($ipAddress, $userAgent);
+    }
+
+    /**
+     * Get the client ID for the current request.
+     */
+    public function getClientId(): string
+    {
+        return $this->clientIdGenerator->getClientId();
+    }
+
+    /**
+     * Get or generate a session ID for GA4.
+     */
+    public function getSessionId(): string
+    {
+        return $this->sessionManager->getSessionId($this->getClientId());
+    }
+
+    /**
+     * Get the engagement time since the last event in milliseconds.
+     */
+    public function getEngagementTime(): int
+    {
+        return $this->sessionManager->getEngagementTime($this->getClientId());
+    }
+
+    /**
+     * Store Google Ad ID in cache for the given client.
+     */
+    public function storeAdId(string $clientId, string $type, string $value): void
+    {
+        $this->sessionManager->storeAdId($clientId, $type, $value);
+    }
+
+    /**
+     * Process an event received from the JS trigger.
+     *
+     * @param  array<string, mixed>  $eventParams
+     */
+    public function processEventFromJs(string $eventName, array $eventParams = []): void
+    {
+        $clientId = $this->getClientId();
+        $handling = $this->getConfig('ga4.event_handling', 'api');
+
+        if ($handling === 'job') {
+            $this->queueEvent($clientId, $eventName, $eventParams);
+        } else {
+            $this->sendEvent($clientId, $eventName, $eventParams);
+        }
+    }
+
+    /**
+     * Check if the configuration is healthy.
+     */
+    public function isHealthy(): bool
+    {
+        return ! empty($this->getConfig('ga4.measurement_id')) &&
+               ! empty($this->getConfig('ga4.api_secret'));
+    }
+
+    /**
+     * Check if the given User-Agent belongs to a bot.
+     */
+    public function isBot(string $userAgent): bool
+    {
+        return $this->botDetector->isBot($userAgent);
+    }
+
+    /**
+     * Get the list of bot User Agents to ignore.
+     *
+     * @return array<int, string>
+     */
+    public function getBotBlacklist(): array
+    {
+        return $this->botDetector->getBotBlacklist();
+    }
+}

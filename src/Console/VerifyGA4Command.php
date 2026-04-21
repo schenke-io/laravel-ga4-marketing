@@ -1,0 +1,59 @@
+<?php
+
+namespace SchenkeIo\LaravelGa4Marketing\Console;
+
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Http;
+
+class VerifyGA4Command extends Command
+{
+    protected $signature = 'ga4-marketing:verify-ga4';
+
+    protected $description = 'Verify GA4 connection using the debug validation server';
+
+    public function handle(): int
+    {
+        $measurementId = Config::get('ga4-marketing.ga4.measurement_id');
+        $apiSecret = Config::get('ga4-marketing.ga4.api_secret');
+
+        if (! $measurementId || ! $apiSecret) {
+            $this->error('GA4 Measurement ID or API Secret is not configured.');
+
+            return self::FAILURE;
+        }
+
+        $this->info("Verifying GA4 connection for Measurement ID: $measurementId");
+
+        $response = Http::post("https://www.google-analytics.com/debug/mp/collect?measurement_id={$measurementId}&api_secret={$apiSecret}", [
+            'client_id' => 'verification-client',
+            'events' => [
+                [
+                    'name' => 'verification_event',
+                    'params' => [],
+                ],
+            ],
+        ]);
+
+        if ($response->failed()) {
+            $this->error('HTTP request to GA4 validation server failed.');
+
+            return self::FAILURE;
+        }
+
+        $results = $response->json('validationMessages');
+
+        if (empty($results)) {
+            $this->info('✅ GA4 connection verified successfully! No validation errors found.');
+
+            return self::SUCCESS;
+        }
+
+        $this->error('❌ GA4 connection verification failed with the following messages:');
+        foreach ($results as $message) {
+            $this->line("- [{$message['validationCode']}] {$message['description']} (Field: {$message['fieldPath']})");
+        }
+
+        return self::FAILURE;
+    }
+}

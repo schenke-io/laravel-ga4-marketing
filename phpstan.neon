@@ -1,0 +1,23 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/nesbot/carbon/extension.neon
+
+
+
+parameters:
+    level: 8
+    paths:
+        - src
+        - workbench/app/Console
+    tmpDir: build/phpstan
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
+    stubFiles:
+
+#    excludePaths:
+#       -  LaravelGa4Marketing/Traits/RelationManagerDefinition.php
+
+    ignoreErrors:
+
+#rules:
+#    - Spatie\Ray\PHPStan\RemainingRayCallRule

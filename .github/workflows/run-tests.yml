@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  php-extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo, pcov
 
 jobs:
   test:
@@ -30,7 +32,6 @@ jobs:
     name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.stability }} - ${{ matrix.os }}
 
     env:
-      php-extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo, pcov
       key: ${{ matrix.os }}_Laravel${{ matrix.laravel }}_${{ matrix.stability }}_Php${{ matrix.php }}
 
     steps:
@@ -41,8 +42,8 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
-          coverage: none
+          extensions: ${{ env.php-extensions }}
+          coverage: pcov
 
       - name: Setup problem matchers
         run: |
@@ -68,8 +69,8 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.4
-          extensions: dom, curl, libxml, mbstring, zip, pdo, sqlite, pdo_sqlite, bcmath, intl, fileinfo
-          coverage: none
+          extensions: ${{ env.php-extensions }}
+          coverage: pcov
 
       - name: Setup Node
         uses: actions/setup-node@v4

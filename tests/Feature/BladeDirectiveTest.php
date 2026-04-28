@@ -9,7 +9,7 @@ class BladeDirectiveTest extends TestCase
 {
     public function test_ga4_marketing_script_directive_renders_correctly()
     {
-        $view = Blade::render('@G4MarketingScript');
+        $view = Blade::render('@Ga4MarketingScript');
 
         $this->assertStringContainsString('<script', $view);
         $this->assertStringContainsString('ga4Marketing', $view);

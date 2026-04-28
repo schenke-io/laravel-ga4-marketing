@@ -7,6 +7,6 @@
 <body data-ga4-event="no-pageview">
     <h1>Outbound Click Test</h1>
     <a href="/browser-test/page-view" id="outbound-link" data-ga4-event="outbound">Outbound Link</a>
-    @G4MarketingScript
+    @Ga4MarketingScript
 </body>
 </html>

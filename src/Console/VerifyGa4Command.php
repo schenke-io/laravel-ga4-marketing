@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 
-class VerifyGA4Command extends Command
+class VerifyGa4Command extends Command
 {
     protected $signature = 'ga4-marketing:verify-ga4';
 
@@ -30,7 +30,7 @@ class VerifyGA4Command extends Command
             'events' => [
                 [
                     'name' => 'verification_event',
-                    'params' => [],
+                    'params' => (object) [],
                 ],
             ],
         ]);
@@ -46,12 +46,27 @@ class VerifyGA4Command extends Command
         if (empty($results)) {
             $this->info('✅ GA4 connection verified successfully! No validation errors found.');
 
+            Http::post("https://www.google-analytics.com/mp/collect?measurement_id={$measurementId}&api_secret={$apiSecret}", [
+                'client_id' => 'verification-client',
+                'events' => [
+                    [
+                        'name' => 'verification_event',
+                        'params' => ['debug_mode' => 1],
+                    ],
+                ],
+            ]);
+
+            $this->info('📡 A debug event was sent to GA4. You should see it in your DebugView shortly.');
+
             return self::SUCCESS;
         }
 
         $this->error('❌ GA4 connection verification failed with the following messages:');
         foreach ($results as $message) {
-            $this->line("- [{$message['validationCode']}] {$message['description']} (Field: {$message['fieldPath']})");
+            $code = $message['validationCode'] ?? 'UNKNOWN';
+            $description = $message['description'] ?? 'No description provided';
+            $field = isset($message['fieldPath']) ? " (Field: {$message['fieldPath']})" : '';
+            $this->line("- [$code] $description$field");
         }
 
         return self::FAILURE;

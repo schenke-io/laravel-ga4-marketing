@@ -24,7 +24,7 @@
         <button onclick="ga4Event('js_button_click', {source: 'inline_js'})">Send JS Event</button>
     </div>
 
-    @G4MarketingScript
+    @Ga4MarketingScript
     @livewireScripts
 </body>
 </html>

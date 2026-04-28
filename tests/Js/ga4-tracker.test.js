@@ -1,12 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+import { ga4Marketing } from '../../resources/js/ga4-tracker';
 
 // Helper to load the tracker script into the JSDOM environment
 const loadTracker = () => {
-    const code = fs.readFileSync(path.resolve(__dirname, '../../resources/js/ga4-tracker.js'), 'utf8');
-    const fn = new Function('window', 'document', code);
-    fn(window, document);
+    window.ga4Marketing = ga4Marketing;
 };
 
 describe('ga4-tracker.js', () => {
@@ -14,6 +13,15 @@ describe('ga4-tracker.js', () => {
         // Reset DOM and global window.ga4Marketing
         document.body.innerHTML = '';
         document.head.innerHTML = '';
+
+        // Reset the singleton state for tests
+        ga4Marketing.config = {
+            route: '/ga4-marketing/event',
+            token: undefined,
+            autoPageView: true
+        };
+        ga4Marketing.startTime = Date.now();
+
         delete window.ga4Marketing;
         delete window.ga4Event;
         

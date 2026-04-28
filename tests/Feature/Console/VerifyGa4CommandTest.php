@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
-use SchenkeIo\LaravelGa4Marketing\Console\VerifyGA4Command;
+use SchenkeIo\LaravelGa4Marketing\Console\VerifyGa4Command;
 
 it('fails if GA4 credentials are not configured', function () {
     Config::set('ga4-marketing.ga4.measurement_id', null);
@@ -10,7 +10,7 @@ it('fails if GA4 credentials are not configured', function () {
 
     $this->artisan('ga4-marketing:verify-ga4')
         ->expectsOutput('GA4 Measurement ID or API Secret is not configured.')
-        ->assertExitCode(VerifyGA4Command::FAILURE);
+        ->assertExitCode(VerifyGa4Command::FAILURE);
 });
 
 it('succeeds if GA4 validation returns no errors', function () {
@@ -24,7 +24,16 @@ it('succeeds if GA4 validation returns no errors', function () {
     $this->artisan('ga4-marketing:verify-ga4')
         ->expectsOutput('Verifying GA4 connection for Measurement ID: G-12345')
         ->expectsOutput('✅ GA4 connection verified successfully! No validation errors found.')
-        ->assertExitCode(VerifyGA4Command::SUCCESS);
+        ->expectsOutput('📡 A debug event was sent to GA4. You should see it in your DebugView shortly.')
+        ->assertExitCode(VerifyGa4Command::SUCCESS);
+
+    Http::assertSent(function ($request) {
+        return str_contains($request->url(), '/debug/mp/collect') && str_contains($request->body(), '"params":{}');
+    });
+
+    Http::assertSent(function ($request) {
+        return str_contains($request->url(), '/mp/collect') && str_contains($request->body(), '"debug_mode":1');
+    });
 });
 
 it('fails if GA4 validation returns errors', function () {
@@ -46,7 +55,28 @@ it('fails if GA4 validation returns errors', function () {
     $this->artisan('ga4-marketing:verify-ga4')
         ->expectsOutput('❌ GA4 connection verification failed with the following messages:')
         ->expectsOutput('- [VALUE_INVALID] Value is invalid (Field: events[0].name)')
-        ->assertExitCode(VerifyGA4Command::FAILURE);
+        ->assertExitCode(VerifyGa4Command::FAILURE);
+});
+
+it('fails if GA4 validation returns errors without fieldPath', function () {
+    Config::set('ga4-marketing.ga4.measurement_id', 'G-12345');
+    Config::set('ga4-marketing.ga4.api_secret', 'secret');
+
+    Http::fake([
+        'https://www.google-analytics.com/debug/mp/collect*' => Http::response([
+            'validationMessages' => [
+                [
+                    'validationCode' => 'VALUE_INVALID',
+                    'description' => 'Value is invalid',
+                ],
+            ],
+        ], 200),
+    ]);
+
+    $this->artisan('ga4-marketing:verify-ga4')
+        ->expectsOutput('❌ GA4 connection verification failed with the following messages:')
+        ->expectsOutput('- [VALUE_INVALID] Value is invalid')
+        ->assertExitCode(VerifyGa4Command::FAILURE);
 });
 
 it('fails if HTTP request fails', function () {
@@ -59,5 +89,5 @@ it('fails if HTTP request fails', function () {
 
     $this->artisan('ga4-marketing:verify-ga4')
         ->expectsOutput('HTTP request to GA4 validation server failed.')
-        ->assertExitCode(VerifyGA4Command::FAILURE);
+        ->assertExitCode(VerifyGa4Command::FAILURE);
 });

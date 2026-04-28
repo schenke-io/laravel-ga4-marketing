@@ -108,7 +108,56 @@ test('it can send an event', function () {
     $this->http->shouldReceive('timeout->post')->andReturn($response);
 
     $result = $this->service->sendEvent('client-123', 'test_event', ['p' => 'v']);
-    expect($result)->toBeNull();
+    expect($result)->toBe($response);
+});
+
+test('it uses debug endpoint and debug_mode=1 when debug mode is enabled', function () {
+    $this->eventValidator->shouldReceive('validateName')->andReturn('test_event');
+    $this->sessionManager->shouldReceive('getSessionData')->andReturn([]);
+    $this->payloadBuilder->shouldReceive('build')->andReturn(['payload']);
+
+    $this->service->setDebugMode(true);
+
+    $this->http->shouldReceive('timeout->post')
+        ->with(Mockery::on(function ($url) {
+            return str_contains($url, 'debug/mp/collect') && str_contains($url, 'measurement_id=mid');
+        }), Mockery::any())
+        ->once();
+
+    $this->service->sendEvent('client-123', 'test_event', []);
+});
+
+test('it uses live endpoint but includes debug_mode=1 when config debug_mode is true', function () {
+    $service = new AnalyticsService(
+        $this->clientIdGenerator, $this->botDetector, $this->eventValidator,
+        $this->eventMapper, $this->sessionManager, $this->payloadBuilder,
+        ['ga4' => [
+            'measurement_id' => 'mid',
+            'api_secret' => 'secret',
+            'debug_mode' => true,
+        ]],
+        $this->http,
+        null, // rateLimiter
+        $this->request
+    );
+
+    $this->eventValidator->shouldReceive('validateName')->andReturn('test_event');
+    $this->sessionManager->shouldReceive('getSessionData')->andReturn([]);
+
+    // Check if debug_mode is passed to payload builder
+    $this->payloadBuilder->shouldReceive('build')
+        ->with(Mockery::any(), Mockery::any(), Mockery::any(), Mockery::on(function ($params) {
+            return ($params['debug_mode'] ?? null) === 1;
+        }), Mockery::any(), Mockery::any())
+        ->andReturn(['payload']);
+
+    $this->http->shouldReceive('timeout->post')
+        ->with(Mockery::on(function ($url) {
+            return ! str_contains($url, 'debug/mp/collect') && str_contains($url, 'mp/collect');
+        }), Mockery::any())
+        ->once();
+
+    $service->sendEvent('client-123', 'test_event', []);
 });
 
 test('it handles exceptions during sendEvent', function () {

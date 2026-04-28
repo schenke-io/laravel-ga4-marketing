@@ -12,7 +12,7 @@ test('ga4-tracker.js contains expected tracking logic', function () {
     $content = file_get_contents($jsPath);
 
     expect($content)->toContain('data-ga4-event');
-    expect($content)->toContain('window.ga4Marketing = {');
+    expect($content)->toContain('const ga4Marketing = {');
     expect($content)->toContain('sendEvent: function(eventName, eventParams = {})');
     expect($content)->toContain('page_view');
     expect($content)->toContain('user_engagement');

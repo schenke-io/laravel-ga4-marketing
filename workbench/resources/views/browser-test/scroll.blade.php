@@ -13,6 +13,6 @@
     <div class="spacer"></div>
     <div id="scroll-target" class="target" data-ga4-event="scroll" data-ga4-area="80%">80% Scroll Target</div>
     <div class="spacer"></div>
-    @G4MarketingScript
+    @Ga4MarketingScript
 </body>
 </html>

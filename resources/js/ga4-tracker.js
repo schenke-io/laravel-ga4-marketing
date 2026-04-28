@@ -1,4 +1,4 @@
-window.ga4Marketing = {
+const ga4Marketing = {
     config: {
         route: '/ga4-marketing/event',
         token: document.querySelector('meta[name="csrf-token"]')?.content,
@@ -130,3 +130,11 @@ window.ga4Marketing = {
         }
     }
 };
+
+if (typeof window !== 'undefined') {
+    window.ga4Marketing = ga4Marketing;
+}
+
+export { ga4Marketing };
+
+export const ga4Event = (eventName, eventParams) => ga4Marketing.sendEvent(eventName, eventParams);

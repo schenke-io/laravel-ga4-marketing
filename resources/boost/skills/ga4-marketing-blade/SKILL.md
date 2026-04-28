@@ -16,7 +16,7 @@ Use this skill when:
 ### Include the Script
 Add to your layout file (in `<head>` or before `</body>`):
 ```blade
-@G4MarketingScript
+@Ga4MarketingScript
 ```
 Or as a component:
 ```blade

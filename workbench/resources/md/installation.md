@@ -17,7 +17,7 @@ php artisan vendor:publish --tag="ga4-marketing-config"
 To enable automatic page view tracking and declarative event tracking (clicks, visibility), add the following Blade directive to your main layout file (e.g., `resources/views/layouts/app.blade.php`), typically before the closing `</body>` tag:
 
 ```html
-@G4MarketingScript
+@Ga4MarketingScript
 ```
 
 ### Configuration

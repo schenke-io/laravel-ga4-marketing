@@ -13,6 +13,7 @@ return [
         'api_secret' => env('GA4_API_SECRET', config('services.google.ga4.api_secret')),
         'debug_mode' => env('GA4_DEBUG_MODE', false),
         'client_id_salt' => env('GA4_CLIENT_ID_SALT', ''),
+        'client_from_user_id' => env('GA4_CLIENT_FROM_USER_ID', false),
         'rate_limit' => [
             'enabled' => env('GA4_RATE_LIMIT_ENABLED', true),
             'max_attempts' => env('GA4_RATE_LIMIT_MAX_ATTEMPTS', 30),

@@ -6,6 +6,6 @@
 </head>
 <body data-ga4-event="no-pageview">
     <h1>Prevented Page View Test</h1>
-    @G4MarketingScript
+    @Ga4MarketingScript
 </body>
 </html>

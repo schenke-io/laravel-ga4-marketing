@@ -9,8 +9,7 @@ use Illuminate\Http\Client\Factory;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
-use Livewire\Livewire;
-use SchenkeIo\LaravelGa4Marketing\Console\VerifyGA4Command;
+use SchenkeIo\LaravelGa4Marketing\Console\VerifyGa4Command;
 use SchenkeIo\LaravelGa4Marketing\Http\Controllers\EventController;
 use SchenkeIo\LaravelGa4Marketing\Middleware\CaptureAdParameters;
 use SchenkeIo\LaravelGa4Marketing\Middleware\TrackOutboundLink;
@@ -72,13 +71,13 @@ class Ga4MarketingServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews()
             ->hasCommands([
-                VerifyGA4Command::class,
+                VerifyGa4Command::class,
             ]);
     }
 
     public function packageBooted(): void
     {
-        Blade::directive('G4MarketingScript', function () {
+        Blade::directive('Ga4MarketingScript', function () {
             return "<?php echo view('ga4-marketing::components.ga4-marketing')->render(); ?>";
         });
 
@@ -92,13 +91,5 @@ class Ga4MarketingServiceProvider extends PackageServiceProvider
             ->middleware('web')
             ->name('ga4-marketing.event');
 
-        if (class_exists(Livewire::class)) {
-            Livewire::listen('ga4-event', function ($eventName, $eventParams = []) {
-                // In Livewire 3, the 'ga4-event' dispatched from the component
-                // is already a browser event that the JS tracker picks up.
-                // Bridging to 'ga4-event-triggered' is not needed and
-                // Livewire::dispatch() is not available globally in v3.
-            });
-        }
     }
 }

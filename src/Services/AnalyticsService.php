@@ -6,6 +6,7 @@ use Illuminate\Cache\RateLimiter;
 use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Http\Client\Factory;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use SchenkeIo\LaravelGa4Marketing\Jobs\SendAnalyticsEventJob;
@@ -77,13 +78,13 @@ class AnalyticsService
      * @param  array<string, mixed>  $eventParams  Additional parameters for the event
      * @param  string|null  $userId  Optional user ID
      */
-    public function sendEvent(string $clientId, string $eventName, array $eventParams = [], ?string $userId = null): void
+    public function sendEvent(string $clientId, string $eventName, array $eventParams = [], ?string $userId = null): ?Response
     {
         $measurementId = $this->getConfig('ga4.measurement_id');
         $apiSecret = $this->getConfig('ga4.api_secret');
 
         if (! $measurementId || ! $apiSecret) {
-            return;
+            return null;
         }
 
         if ($this->getConfig('ga4.rate_limit.enabled', true)) {
@@ -91,7 +92,7 @@ class AnalyticsService
             $decaySeconds = $this->getConfig('ga4.rate_limit.decay_seconds', 60);
 
             if ($this->rateLimiter && $this->rateLimiter->tooManyAttempts('ga4-marketing-event:'.$clientId, $maxAttempts)) {
-                return;
+                return null;
             }
 
             $this->rateLimiter?->hit('ga4-marketing-event:'.$clientId, $decaySeconds);
@@ -119,9 +120,11 @@ class AnalyticsService
         );
 
         try {
-            $this->http?->timeout(2)->post("{$baseUrl}?measurement_id={$measurementId}&api_secret={$apiSecret}", $payload);
+            return $this->http?->timeout(2)->post("{$baseUrl}?measurement_id={$measurementId}&api_secret={$apiSecret}", $payload);
         } catch (\Throwable $e) {
             $this->handler?->report($e);
+
+            return null;
         }
     }
 

@@ -6,6 +6,6 @@
 </head>
 <body>
     <h1>Page View Test</h1>
-    @G4MarketingScript
+    @Ga4MarketingScript
 </body>
 </html>

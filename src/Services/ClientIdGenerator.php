@@ -24,6 +24,10 @@ class ClientIdGenerator
      */
     public function getClientId(): string
     {
+        if (config('ga4-marketing.ga4.client_from_user_id') && auth()->check()) {
+            return sha1('user-'.auth()->id().$this->salt);
+        }
+
         $request = $this->request ?: request();
 
         return $this->generate($request->ip(), $request->userAgent());

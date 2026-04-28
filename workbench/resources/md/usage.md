@@ -5,14 +5,14 @@
 To enable client-side tracking, include the following Blade directive in your main layout (usually before the closing `</body>` tag):
 
 ```html
-@G4MarketingScript
+@Ga4MarketingScript
 ```
 
 This directive replaces the legacy `<x-ga4-marketing::ga4-marketing />` component. It renders the necessary tracking scripts and handles automatic events. It ensures scripts are only included once per page.
 
 ### Automatic Page View Tracking
 
-When `@G4MarketingScript` is included, a `page_view` event is automatically sent to GA4 on window load.
+When `@Ga4MarketingScript` is included, a `page_view` event is automatically sent to GA4 on window load.
 
 #### Disabling Automatic Page Views
 
@@ -123,7 +123,7 @@ $this->dispatch('ga4-event', 'button_click', [
 To send events from JavaScript, first include the tracking script in your layout using the Blade directive:
 
 ```html
-@G4MarketingScript
+@Ga4MarketingScript
 ```
 
 This directive renders the tracking scripts and ensures they are only included once. You can then use the `window.ga4Event` helper:
@@ -196,7 +196,7 @@ When you use tracking on an `<a>` tag, the package automatically captures:
 
 ### User Engagement Tracking
 
-The tracker automatically tracks the time a user spends on a page and sends a `user_engagement` event (with `engagement_time_msec`) when the user navigates away or closes the tab. This requires `@G4MarketingScript` to be present.
+The tracker automatically tracks the time a user spends on a page and sends a `user_engagement` event (with `engagement_time_msec`) when the user navigates away or closes the tab. This requires `@Ga4MarketingScript` to be present.
 
 ### User ID Tracking
 

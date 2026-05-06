@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 use SchenkeIo\LaravelGa4Marketing\Console\VerifyGa4Command;
 use SchenkeIo\LaravelGa4Marketing\Http\Controllers\EventController;
 use SchenkeIo\LaravelGa4Marketing\Middleware\CaptureAdParameters;
+use SchenkeIo\LaravelGa4Marketing\Middleware\HandleVisitorCookie;
 use SchenkeIo\LaravelGa4Marketing\Middleware\TrackOutboundLink;
 use SchenkeIo\LaravelGa4Marketing\Middleware\TrackPageView;
 use SchenkeIo\LaravelGa4Marketing\Services\AnalyticsService;
@@ -86,6 +87,9 @@ class Ga4MarketingServiceProvider extends PackageServiceProvider
         $router->aliasMiddleware('capture-ad-parameters', CaptureAdParameters::class);
         $router->aliasMiddleware('track-page-view', TrackPageView::class);
         $router->aliasMiddleware('track-outbound-link', TrackOutboundLink::class);
+        $router->aliasMiddleware('handle-visitor-cookie', HandleVisitorCookie::class);
+
+        $router->pushMiddlewareToGroup('web', HandleVisitorCookie::class);
 
         Route::post('ga4-marketing/event', [EventController::class, 'store'])
             ->middleware('web')

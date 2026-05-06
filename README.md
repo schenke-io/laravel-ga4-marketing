@@ -26,8 +26,8 @@ This package provides a simple way to integrate Google Analytics 4 (GA4) event t
 
 ## <a name="features"></a>Features
 
-- **Cookie-less Tracking**: Privacy-first tracking without relying on client-side cookies.
-- **Privacy-first Hashing**: Securely generate client IDs using privacy-focused hashing techniques.
+- **Cookie-based Tracking**: Persistent visitor identification using a `visitor` cookie (default 100 days).
+- **Privacy-first Hashing**: Securely generate hashed User IDs for authenticated users, which automatically overwrite the anonymous visitor cookie.
 - **Hybrid Event Handling**: Support for both immediate API calls and queued background jobs for event processing.
 - **JS-Triggered Tracking**: Client-side triggers for events, reducing server-side overhead and improving accuracy.
 - **Page View Component**: Simple Blade component to manually track page views including page location, title, and visitor language.
@@ -45,6 +45,7 @@ This package provides a simple way to integrate Google Analytics 4 (GA4) event t
     * [JavaScript Tracking Initialization](#javascript-tracking-initialization)
     * [Automatic Page View Tracking](#automatic-page-view-tracking)
       * [Disabling Automatic Page Views](#disabling-automatic-page-views)
+    * [Visitor & User Identification](#visitor-user-identification)
     * [Google Ads Attribution](#google-ads-attribution)
     * [Server-side Tracking Middlewares](#server-side-tracking-middlewares)
       * [Page View Tracking](#page-view-tracking)
@@ -168,6 +169,22 @@ return [
          * queue them for background processing.
          */
         'event_handling' => env('GA4_EVENT_HANDLING', 'api'),
+
+        /*
+         * When enabled, the client ID is automatically set to a hashed
+         * version of the authenticated user's ID.
+         */
+        'client_from_user_id' => env('GA4_CLIENT_FROM_USER_ID', false),
+
+        /*
+         * The name of the cookie used to store the visitor ID.
+         */
+        'cookie_name' => env('GA4_COOKIE_NAME', 'visitor'),
+
+        /*
+         * The lifetime of the visitor cookie in minutes (144000 = 100 days).
+         */
+        'cookie_lifetime' => env('GA4_COOKIE_LIFETIME', 144000),
     ],
 
     /*
@@ -203,6 +220,17 @@ If you want to disable automatic tracking for a specific page, add `data-ga4-eve
 ```html
 <body data-ga4-event="no-pageview">
 ```
+
+### <a name="visitor-user-identification"></a>Visitor & User Identification
+
+The package uses a `visitor` cookie (configurable) to maintain a persistent client ID for anonymous users. This cookie is set to last 100 days by default and is automatically extended on each request.
+
+If a user is authenticated and `client_from_user_id` is enabled in the config, the package will:
+1. Generate a hashed version of the User ID.
+2. Use this hash as the GA4 `client_id`.
+3. Overwrite the `visitor` cookie with this hashed ID.
+
+This ensures that the same user is tracked consistently across different devices if they log in, while maintaining privacy by hashing the actual database ID.
 
 ### <a name="google-ads-attribution"></a>Google Ads Attribution
 
@@ -249,8 +277,8 @@ use SchenkeIo\LaravelGa4Marketing\Services\AnalyticsService;
 
 public function someAction(AnalyticsService $ga4Service)
 {
-    $clientId = $ga4Service->generateClientId(request()->ip(), request()->userAgent());
-    
+    $clientId = $ga4Service->getClientId();
+
     $ga4Service->sendEvent($clientId, 'button_click', [
         'button_name' => 'subscribe',
         'location' => 'footer'

@@ -22,6 +22,17 @@ If you want to disable automatic tracking for a specific page, add `data-ga4-eve
 <body data-ga4-event="no-pageview">
 ```
 
+### Visitor & User Identification
+
+The package uses a `visitor` cookie (configurable) to maintain a persistent client ID for anonymous users. This cookie is set to last 100 days by default and is automatically extended on each request.
+
+If a user is authenticated and `client_from_user_id` is enabled in the config, the package will:
+1. Generate a hashed version of the User ID.
+2. Use this hash as the GA4 `client_id`.
+3. Overwrite the `visitor` cookie with this hashed ID.
+
+This ensures that the same user is tracked consistently across different devices if they log in, while maintaining privacy by hashing the actual database ID.
+
 ### Google Ads Attribution
 
 To capture Google Ad IDs (`gclid`, `wbraid`, `gbraid`) from the URL and store them in the server-side cache, add the `capture-ad-parameters` middleware to your routes. This is recommended to be used alongside page view tracking:
@@ -67,8 +78,8 @@ use SchenkeIo\LaravelGa4Marketing\Services\AnalyticsService;
 
 public function someAction(AnalyticsService $ga4Service)
 {
-    $clientId = $ga4Service->generateClientId(request()->ip(), request()->userAgent());
-    
+    $clientId = $ga4Service->getClientId();
+
     $ga4Service->sendEvent($clientId, 'button_click', [
         'button_name' => 'subscribe',
         'location' => 'footer'

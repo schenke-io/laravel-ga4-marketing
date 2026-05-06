@@ -62,8 +62,8 @@ test('it can set debug mode', function () {
 });
 
 test('it can generate client id', function () {
-    $this->clientIdGenerator->shouldReceive('generate')->with('ip', 'ua')->andReturn('client-123');
-    expect($this->service->generateClientId('ip', 'ua'))->toBe('client-123');
+    $this->clientIdGenerator->shouldReceive('generate')->withNoArgs()->andReturn('client-123');
+    expect($this->service->generateClientId())->toBe('client-123');
 });
 
 test('it can get client id', function () {

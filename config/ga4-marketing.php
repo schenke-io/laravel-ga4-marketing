@@ -21,6 +21,8 @@ return [
         ],
         'session_lifetime' => env('GA4_SESSION_LIFETIME', 1800), // 30 minutes in seconds
         'event_handling' => env('GA4_EVENT_HANDLING', 'api'), // 'job' or 'api'
+        'cookie_name' => env('GA4_COOKIE_NAME', 'visitor'),
+        'cookie_lifetime' => env('GA4_COOKIE_LIFETIME', 144000), // 100 days in minutes
     ],
 
     /*

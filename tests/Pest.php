@@ -16,7 +16,7 @@ use SchenkeIo\LaravelGa4Marketing\Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
-    ->in('Feature', 'Browser');
+    ->in('Unit', 'Feature', 'Browser');
 
 /*
 |--------------------------------------------------------------------------

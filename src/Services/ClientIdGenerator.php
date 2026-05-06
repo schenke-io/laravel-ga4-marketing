@@ -6,17 +6,19 @@ use Illuminate\Http\Request;
 
 class ClientIdGenerator
 {
+    protected ?string $cachedClientId = null;
+
     public function __construct(
         protected ?Request $request = null,
-        private string $salt = ''
+        private readonly string $salt = ''
     ) {}
 
     /**
-     * Generate a unique client ID based on IP address and User Agent.
+     * Generate a unique client ID in the form [random].[timestamp]
      */
-    public function generate(?string $ipAddress, ?string $userAgent): string
+    public function generate(): string
     {
-        return sha1(($ipAddress ?? '127.0.0.1').($userAgent ?? 'unknown').$this->salt);
+        return mt_rand(1000000000, mt_getrandmax()).'.'.time();
     }
 
     /**
@@ -24,12 +26,24 @@ class ClientIdGenerator
      */
     public function getClientId(): string
     {
+        if ($this->cachedClientId) {
+            return $this->cachedClientId;
+        }
+
         if (config('ga4-marketing.ga4.client_from_user_id') && auth()->check()) {
-            return sha1('user-'.auth()->id().$this->salt);
+            return $this->cachedClientId = $this->getHashedUserId();
         }
 
         $request = $this->request ?: request();
+        $cookieName = config('ga4-marketing.ga4.cookie_name', 'visitor');
 
-        return $this->generate($request->ip(), $request->userAgent());
+        $cookieValue = $request->cookie($cookieName);
+
+        return $this->cachedClientId = (is_string($cookieValue) ? $cookieValue : null) ?: $this->generate();
+    }
+
+    public function getHashedUserId(): string
+    {
+        return sha1('user-'.auth()->id().$this->salt);
     }
 }

@@ -100,6 +100,22 @@ return [
          * queue them for background processing.
          */
         'event_handling' => env('GA4_EVENT_HANDLING', 'api'),
+
+        /*
+         * When enabled, the client ID is automatically set to a hashed
+         * version of the authenticated user's ID.
+         */
+        'client_from_user_id' => env('GA4_CLIENT_FROM_USER_ID', false),
+
+        /*
+         * The name of the cookie used to store the visitor ID.
+         */
+        'cookie_name' => env('GA4_COOKIE_NAME', 'visitor'),
+
+        /*
+         * The lifetime of the visitor cookie in minutes (144000 = 100 days).
+         */
+        'cookie_lifetime' => env('GA4_COOKIE_LIFETIME', 144000),
     ],
 
     /*

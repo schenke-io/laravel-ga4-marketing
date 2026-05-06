@@ -8,8 +8,6 @@ use SchenkeIo\LaravelGa4Marketing\Services\ClientIdGenerator;
 test('getClientId returns hashed user ID when config is enabled and user is logged in', function () {
     Config::set('ga4-marketing.ga4.client_from_user_id', true);
 
-    $user = Mockery::mock('overload:User');
-    $user->shouldReceive('getAuthIdentifier')->andReturn(123);
     Auth::shouldReceive('check')->andReturn(true);
     Auth::shouldReceive('id')->andReturn(123);
 
@@ -19,32 +17,24 @@ test('getClientId returns hashed user ID when config is enabled and user is logg
     expect($clientId)->toBe(sha1('user-123test-salt'));
 });
 
-test('getClientId returns default hash when config is disabled even if user is logged in', function () {
-    Config::set('ga4-marketing.ga4.client_from_user_id', false);
+test('getClientId returns cookie value when present', function () {
+    Config::set('ga4-marketing.ga4.cookie_name', 'visitor');
 
-    Auth::shouldReceive('check')->andReturn(true);
-    Auth::shouldReceive('id')->andReturn(123);
+    $request = Request::create('/', 'GET', [], ['visitor' => 'test-cookie-value']);
 
-    $request = Request::create('/', 'GET');
-    $request->headers->set('User-Agent', 'test-ua');
-
-    $generator = new ClientIdGenerator($request, 'test-salt');
+    $generator = new ClientIdGenerator($request);
     $clientId = $generator->getClientId();
 
-    expect($clientId)->not->toBe(sha1('user-123test-salt'));
-    expect($clientId)->toBe(sha1('127.0.0.1test-uatest-salt'));
+    expect($clientId)->toBe('test-cookie-value');
 });
 
-test('getClientId returns default hash when config is enabled but user is not logged in', function () {
-    Config::set('ga4-marketing.ga4.client_from_user_id', true);
-
+test('getClientId returns new ID when no cookie and not logged in', function () {
     Auth::shouldReceive('check')->andReturn(false);
 
     $request = Request::create('/', 'GET');
-    $request->headers->set('User-Agent', 'test-ua');
 
-    $generator = new ClientIdGenerator($request, 'test-salt');
+    $generator = new ClientIdGenerator($request);
     $clientId = $generator->getClientId();
 
-    expect($clientId)->toBe(sha1('127.0.0.1test-uatest-salt'));
+    expect($clientId)->toMatch('/^\d+\.\d+$/');
 });

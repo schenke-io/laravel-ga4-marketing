@@ -178,11 +178,11 @@ class AnalyticsService
     }
 
     /**
-     * Generate a unique client ID based on IP address and User Agent.
+     * Generate a unique client ID.
      */
-    public function generateClientId(?string $ipAddress, ?string $userAgent): string
+    public function generateClientId(): string
     {
-        return $this->clientIdGenerator->generate($ipAddress, $userAgent);
+        return $this->clientIdGenerator->generate();
     }
 
     /**

@@ -7,8 +7,8 @@ This package provides a simple way to integrate Google Analytics 4 (GA4) event t
 
 ## Features
 
-- **Cookie-less Tracking**: Privacy-first tracking without relying on client-side cookies.
-- **Privacy-first Hashing**: Securely generate client IDs using privacy-focused hashing techniques.
+- **Cookie-based Tracking**: Persistent visitor identification using a `visitor` cookie (default 100 days).
+- **Privacy-first Hashing**: Securely generate hashed User IDs for authenticated users, which automatically overwrite the anonymous visitor cookie.
 - **Hybrid Event Handling**: Support for both immediate API calls and queued background jobs for event processing.
 - **JS-Triggered Tracking**: Client-side triggers for events, reducing server-side overhead and improving accuracy.
 - **Page View Component**: Simple Blade component to manually track page views including page location, title, and visitor language.

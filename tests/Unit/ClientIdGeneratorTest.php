@@ -2,16 +2,17 @@
 
 use SchenkeIo\LaravelGa4Marketing\Services\ClientIdGenerator;
 
-test('it can generate a client id', function () {
+test('it can generate a client id in the new format', function () {
     $generator = new ClientIdGenerator;
-    $clientId = $generator->generate('127.0.0.1', 'test-ua');
+    $clientId = $generator->generate();
 
-    expect($clientId)->toBe(sha1('127.0.0.1test-ua'));
+    expect($clientId)->toMatch('/^\d+\.\d+$/');
 });
 
-test('it uses a salt for client id if configured', function () {
-    $generator = new ClientIdGenerator(null, 'my-salt');
-    $clientId = $generator->generate('127.0.0.1', 'test-ua');
+test('it can cache the client id', function () {
+    $generator = new ClientIdGenerator;
+    $clientId1 = $generator->getClientId();
+    $clientId2 = $generator->getClientId();
 
-    expect($clientId)->toBe(sha1('127.0.0.1test-uamy-salt'));
+    expect($clientId1)->toBe($clientId2);
 });

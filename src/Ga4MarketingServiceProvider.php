@@ -25,6 +25,12 @@ use SchenkeIo\LaravelGa4Marketing\Services\SessionManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
+/**
+ * Service provider for the GA4 Marketing package.
+ *
+ * This class handles package registration, configuration, routing,
+ * and Blade directive setup using Spatie's Laravel Package Tools.
+ */
 class Ga4MarketingServiceProvider extends PackageServiceProvider
 {
     public static function getPackageRoot(): string
@@ -32,6 +38,9 @@ class Ga4MarketingServiceProvider extends PackageServiceProvider
         return dirname(__DIR__);
     }
 
+    /**
+     * Actions to perform when the package is registered.
+     */
     public function packageRegistered(): void
     {
         $this->app->singleton(ClientIdGenerator::class, function ($app) {
@@ -76,10 +85,17 @@ class Ga4MarketingServiceProvider extends PackageServiceProvider
             ]);
     }
 
+    /**
+     * Actions to perform when the package is booted.
+     */
     public function packageBooted(): void
     {
         Blade::directive('Ga4MarketingScript', function () {
             return "<?php echo view('ga4-marketing::components.ga4-marketing')->render(); ?>";
+        });
+
+        Blade::directive('Ga4MarketingConfig', function () {
+            return "<?php echo view('ga4-marketing::components.config')->render(); ?>";
         });
 
         /** @var Router $router */

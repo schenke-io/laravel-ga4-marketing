@@ -2,6 +2,14 @@
 
 namespace SchenkeIo\LaravelGa4Marketing\Services;
 
+/**
+ * Service for mapping method arguments to GA4 event parameters.
+ *
+ * This class provides a centralized mapping logic for various
+ * recommended and custom GA4 events, ensuring that PHP method
+ * arguments are correctly transformed into the expected GA4
+ * parameter structure.
+ */
 class EventMapper
 {
     /**

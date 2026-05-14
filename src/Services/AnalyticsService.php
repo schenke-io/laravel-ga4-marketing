@@ -12,19 +12,24 @@ use Illuminate\Support\Facades\Cache;
 use SchenkeIo\LaravelGa4Marketing\Jobs\SendAnalyticsEventJob;
 
 /**
- * @method void pageView(string $pageLocation, ?string $pageTitle = null, ?string $pageReferrer = null, ?string $language = null)
- * @method void click(string $linkUrl, ?string $linkText = null, ?string $linkId = null, ?string $linkClasses = null, ?string $linkDomain = null, ?bool $outbound = null)
- * @method void login(string $method)
- * @method void signUp(string $method)
- * @method void share(string $method, string $contentType, string $itemId)
- * @method void search(string $searchTerm)
- * @method void viewItem(array<int, mixed> $items, ?string $currency = null, ?float $value = null)
- * @method void addToCart(array<int, mixed> $items, ?string $currency = null, ?float $value = null)
- * @method void beginCheckout(array<int, mixed> $items, ?string $currency = null, ?float $value = null, ?string $coupon = null)
- * @method void purchase(string $transactionId, array<int, mixed> $items, float $value, ?string $currency = null, ?float $tax = null, ?float $shipping = null, ?string $coupon = null)
- * @method void scroll(int $percentScrolled)
- * @method void fileDownload(string $fileName, string $extension, string $linkUrl, ?string $linkText = null, ?string $linkId = null, ?string $linkClasses = null, ?string $linkDomain = null)
- * @method void calculatorUsed(array<string, mixed> $params)
+ * Service for interacting with Google Analytics 4 (GA4) Measurement Protocol.
+ *
+ * This service handles event validation, mapping, session management, and
+ * payload construction for GA4 events. It supports both immediate API
+ * calls and queued background jobs for event processing.
+ *
+ * @method void click(string $linkUrl, ?string $linkText = null, ?string $linkId = null, ?string $linkClasses = null, ?string $linkDomain = null, ?bool $outbound = null) Track element clicks
+ * @method void login(string $method) Track user login
+ * @method void signUp(string $method) Track user sign-up
+ * @method void share(string $method, string $contentType, string $itemId) Track content sharing
+ * @method void search(string $searchTerm) Track site searches
+ * @method void viewItem(array<int, mixed> $items, ?string $currency = null, ?float $value = null) Track item views
+ * @method void addToCart(array<int, mixed> $items, ?string $currency = null, ?float $value = null) Track adding items to cart
+ * @method void beginCheckout(array<int, mixed> $items, ?string $currency = null, ?float $value = null, ?string $coupon = null) Track start of checkout
+ * @method void purchase(string $transactionId, array<int, mixed> $items, float $value, ?string $currency = null, ?float $tax = null, ?float $shipping = null, ?string $coupon = null) Track successful purchase
+ * @method void scroll(int $percentScrolled) Track page scrolling
+ * @method void fileDownload(string $fileName, string $extension, string $linkUrl, ?string $linkText = null, ?string $linkId = null, ?string $linkClasses = null, ?string $linkDomain = null) Track file downloads
+ * @method void calculatorUsed(array<string, mixed> $params) Track calculator usage
  */
 class AnalyticsService
 {
@@ -32,7 +37,11 @@ class AnalyticsService
 
     protected bool $debugMode = false;
 
+    private bool $pageViewTracked = false;
+
     /**
+     * Create a new AnalyticsService instance.
+     *
      * @param  array<string, mixed>  $config
      */
     public function __construct(
@@ -71,6 +80,32 @@ class AnalyticsService
     }
 
     /**
+     * Mark the current request as having a page view tracked.
+     */
+    public function markPageViewAsTracked(): void
+    {
+        $this->pageViewTracked = true;
+    }
+
+    /**
+     * Check if a page view has already been tracked in the current request.
+     */
+    public function wasPageViewTracked(): bool
+    {
+        return $this->pageViewTracked;
+    }
+
+    /**
+     * Send a page_view event to GA4.
+     */
+    public function pageView(string $pageLocation, ?string $pageTitle = null, ?string $pageReferrer = null, ?string $language = null): void
+    {
+        $this->markPageViewAsTracked();
+        $params = $this->eventMapper->mapArgumentsToParams('pageView', [$pageLocation, $pageTitle, $pageReferrer, $language]);
+        $this->sendEvent($this->getClientId(), 'page_view', $params);
+    }
+
+    /**
      * Send an event to GA4 immediately.
      *
      * @param  string  $clientId  The unique ID for the client
@@ -80,16 +115,16 @@ class AnalyticsService
      */
     public function sendEvent(string $clientId, string $eventName, array $eventParams = [], ?string $userId = null): ?Response
     {
-        $measurementId = $this->getConfig('ga4.measurement_id');
-        $apiSecret = $this->getConfig('ga4.api_secret');
+        $measurementId = data_get($this->config, 'ga4.measurement_id');
+        $apiSecret = data_get($this->config, 'ga4.api_secret');
 
         if (! $measurementId || ! $apiSecret) {
             return null;
         }
 
-        if ($this->getConfig('ga4.rate_limit.enabled', true)) {
-            $maxAttempts = $this->getConfig('ga4.rate_limit.max_attempts', 30);
-            $decaySeconds = $this->getConfig('ga4.rate_limit.decay_seconds', 60);
+        if (data_get($this->config, 'ga4.rate_limit.enabled', true)) {
+            $maxAttempts = data_get($this->config, 'ga4.rate_limit.max_attempts', 30);
+            $decaySeconds = data_get($this->config, 'ga4.rate_limit.decay_seconds', 60);
 
             if ($this->rateLimiter && $this->rateLimiter->tooManyAttempts('ga4-marketing-event:'.$clientId, $maxAttempts)) {
                 return null;
@@ -102,7 +137,7 @@ class AnalyticsService
 
         $baseUrl = 'https://www.google-analytics.com/mp/collect';
 
-        if ($this->debugMode || $this->getConfig('ga4.debug_mode')) {
+        if ($this->debugMode || data_get($this->config, 'ga4.debug_mode')) {
             $eventParams['debug_mode'] = 1;
             if ($this->debugMode) {
                 $baseUrl = 'https://www.google-analytics.com/debug/mp/collect';
@@ -130,24 +165,7 @@ class AnalyticsService
 
     protected function getIpAddress(): ?string
     {
-        $request = $this->request ?: (function_exists('request') ? request() : null);
-
-        return $request?->ip();
-    }
-
-    protected function getConfig(string $key, mixed $default = null): mixed
-    {
-        $parts = explode('.', $key);
-        $current = $this->config;
-        foreach ($parts as $part) {
-            if (is_array($current) && array_key_exists($part, $current)) {
-                $current = $current[$part];
-            } else {
-                return $default;
-            }
-        }
-
-        return $current;
+        return $this->request?->ip();
     }
 
     /**
@@ -225,7 +243,7 @@ class AnalyticsService
     public function processEventFromJs(string $eventName, array $eventParams = []): void
     {
         $clientId = $this->getClientId();
-        $handling = $this->getConfig('ga4.event_handling', 'api');
+        $handling = data_get($this->config, 'ga4.event_handling', 'api');
 
         if ($handling === 'job') {
             $this->queueEvent($clientId, $eventName, $eventParams);
@@ -239,8 +257,8 @@ class AnalyticsService
      */
     public function isHealthy(): bool
     {
-        return ! empty($this->getConfig('ga4.measurement_id')) &&
-               ! empty($this->getConfig('ga4.api_secret'));
+        return ! empty(data_get($this->config, 'ga4.measurement_id')) &&
+               ! empty(data_get($this->config, 'ga4.api_secret'));
     }
 
     /**

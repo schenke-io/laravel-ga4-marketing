@@ -2,6 +2,12 @@
 
 namespace SchenkeIo\LaravelGa4Marketing\Services;
 
+/**
+ * Service for building the GA4 Measurement Protocol payload.
+ *
+ * This class constructs the final JSON payload sent to Google Analytics,
+ * including client information, events, parameters, and IP anonymization.
+ */
 class PayloadBuilder
 {
     /**

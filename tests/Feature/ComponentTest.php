@@ -9,11 +9,12 @@ it('renders the tracking scripts component', function () {
 });
 
 it('warns when component is included more than once', function () {
+    config(['app.debug' => true]);
     $view = Blade::render('
         <x-ga4-marketing::ga4-marketing />
         <x-ga4-marketing::ga4-marketing />
     ');
 
     expect($view)->toContain('window.ga4Marketing')
-        ->and($view)->toContain('console.warn(\'ga4-marketing component included more than once.\')');
+        ->and($view)->toContain('console.warn(\'GA4 Marketing: component included more than once.\')');
 });

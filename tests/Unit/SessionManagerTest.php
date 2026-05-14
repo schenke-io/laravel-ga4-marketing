@@ -102,3 +102,56 @@ test('it returns 0 engagement time if no activity', function () {
 
     expect($this->manager->getEngagementTime('c'))->toBe(0);
 });
+
+test('it caches session data internally for the same client id', function () {
+    $clientId = 'client-123';
+
+    $this->cache->shouldReceive('has')->once()->andReturn(false);
+    $this->cache->shouldReceive('get')->once()->andReturn([]);
+    $this->config->shouldReceive('get')->once()->andReturn(1800);
+    $this->cache->shouldReceive('put')->once();
+
+    $data1 = $this->manager->getSessionData($clientId);
+    $data2 = $this->manager->getSessionData($clientId);
+
+    expect($data1)->toBe($data2);
+});
+
+test('it clears internal cache when storing ad id', function () {
+    $clientId = 'client-123';
+
+    // Initial session data generation
+    $this->cache->shouldReceive('has')->once()->andReturn(false);
+    $this->cache->shouldReceive('get')->once()->andReturn([]);
+    $this->config->shouldReceive('get')->andReturn(1800);
+    $this->cache->shouldReceive('put')->once();
+
+    $this->manager->getSessionData($clientId);
+
+    // Storing Ad ID should clear internal cache
+    $this->cache->shouldReceive('get')->once()->with("ga_last_activity_$clientId", [])->andReturn([]);
+    $this->cache->shouldReceive('put')->once(); // for storeAdId
+
+    $this->manager->storeAdId($clientId, 'gclid', 'val');
+
+    // Subsequent call should hit the cache repository again
+    $this->cache->shouldReceive('has')->once()->andReturn(true);
+    $this->cache->shouldReceive('get')->once()->andReturn(['session_id' => 'abc', 'last_active' => time()]);
+    $this->cache->shouldReceive('put')->once(); // for getSessionData update
+
+    $this->manager->getSessionData($clientId);
+});
+
+test('getSessionId uses internal cache on repeated calls', function () {
+    $clientId = 'client-123';
+
+    $this->cache->shouldReceive('has')->once()->andReturn(false);
+    $this->cache->shouldReceive('get')->once()->andReturn([]);
+    $this->config->shouldReceive('get')->once()->andReturn(1800);
+    $this->cache->shouldReceive('put')->once();
+
+    $id1 = $this->manager->getSessionId($clientId);
+    $id2 = $this->manager->getSessionId($clientId);
+
+    expect($id1)->toBe($id2);
+});

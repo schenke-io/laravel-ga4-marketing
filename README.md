@@ -30,7 +30,7 @@ This package provides a simple way to integrate Google Analytics 4 (GA4) event t
 - **Privacy-first Hashing**: Securely generate hashed User IDs for authenticated users, which automatically overwrite the anonymous visitor cookie.
 - **Hybrid Event Handling**: Support for both immediate API calls and queued background jobs for event processing.
 - **JS-Triggered Tracking**: Client-side triggers for events, reducing server-side overhead and improving accuracy.
-- **Page View Component**: Simple Blade component to manually track page views including page location, title, and visitor language.
+- **Automatic Tracking**: Easy integration via Blade directives (`@Ga4MarketingScript` or `@Ga4MarketingConfig`) for automatic page view and engagement tracking.
 - **Bot Filtering**: Built-in filtering to prevent common bots and crawlers from polluting your analytics.
 - **Visibility Tracking**: Blade component to track when elements become visible using IntersectionObserver.
 - **Non-blocking Execution**: Events are sent with a short timeout and exceptions are caught to ensure your application remains responsive.
@@ -42,7 +42,9 @@ This package provides a simple way to integrate Google Analytics 4 (GA4) event t
     * [Configuration](#configuration)
       * [Advanced Configuration](#advanced-configuration)
   * [Usage](#usage)
-    * [JavaScript Tracking Initialization](#javascript-tracking-initialization)
+    * [1. Standard Mode (Quick Setup)](#1-standard-mode-quick-setup)
+    * [2. Advanced Mode (Vite & Bundling)](#2-advanced-mode-vite-bundling)
+    * [3. Server-Side Only Mode](#3-server-side-only-mode)
     * [Automatic Page View Tracking](#automatic-page-view-tracking)
       * [Disabling Automatic Page Views](#disabling-automatic-page-views)
     * [Visitor & User Identification](#visitor-user-identification)
@@ -55,7 +57,6 @@ This package provides a simple way to integrate Google Analytics 4 (GA4) event t
     * [Bot Filtering](#bot-filtering)
     * [Livewire Event Bridging](#livewire-event-bridging)
     * [JavaScript Event Bridging](#javascript-event-bridging)
-      * [Vite & Bundling](#vite-bundling)
     * [Visibility Tracking](#visibility-tracking)
       * [Declarative Tracking](#declarative-tracking)
     * [Click Tracking](#click-tracking)
@@ -199,26 +200,67 @@ return [
 
 ## <a name="usage"></a>Usage
 
-### <a name="javascript-tracking-initialization"></a>JavaScript Tracking Initialization
+This package supports three primary integration modes to suit different application architectures.
 
-To enable client-side tracking, include the following Blade directive in your main layout (usually before the closing `</body>` tag):
+### <a name="1-standard-mode-quick-setup"></a>1. Standard Mode (Quick Setup)
+
+Best for most applications. Simply add the `@Ga4MarketingScript` directive to your main layout file, typically before the closing `</body>` tag:
 
 ```html
 @Ga4MarketingScript
 ```
 
-This directive replaces the legacy `<x-ga4-marketing::ga4-marketing />` component. It renders the necessary tracking scripts and handles automatic events. It ensures scripts are only included once per page.
+This directive:
+- Renders the necessary tracking scripts.
+- Automatically handles CSRF tokens and event routing.
+- Sends a `page_view` event on window load.
+- Enables declarative tracking (clicks, visibility).
+- Ensures scripts are only included once per page.
+
+### <a name="2-advanced-mode-vite-bundling"></a>2. Advanced Mode (Vite & Bundling)
+
+If you prefer to bundle the tracking logic with your application for better performance, you can import the tracker from the package resources and use the configuration directive.
+
+**JavaScript Setup:**
+Import the tracker in your `resources/js/app.js`:
+
+```javascript
+import '../../vendor/schenke-io/laravel-ga4-marketing/resources/js/ga4-tracker';
+```
+
+**Blade Setup:**
+Add the `@Ga4MarketingConfig` directive in your layout. This provides the necessary configuration (route, CSRF token) to the bundled script:
+
+```html
+@Ga4MarketingConfig
+```
+
+The `@Ga4MarketingConfig` directive is smart: it automatically disables the client-side `page_view` event if the page view was already tracked on the server (e.g., via middleware), preventing double counting.
+
+### <a name="3-server-side-only-mode"></a>3. Server-Side Only Mode
+
+For tracking without any client-side scripts, you can rely entirely on the `track-page-view` middleware and the `AnalyticsService`.
+
+```php
+Route::middleware(['track-page-view'])->group(function () {
+    // your routes
+});
+```
 
 ### <a name="automatic-page-view-tracking"></a>Automatic Page View Tracking
 
-When `@Ga4MarketingScript` is included, a `page_view` event is automatically sent to GA4 on window load.
+When using `@Ga4MarketingScript` or `@Ga4MarketingConfig`, a `page_view` event is automatically sent to GA4 on window load, unless:
+1. It was already tracked on the server during the same request.
+2. It is explicitly disabled via the `<body>` tag.
 
 #### <a name="disabling-automatic-page-views"></a>Disabling Automatic Page Views
 
-If you want to disable automatic tracking for a specific page, add `data-ga4-event="no-pageview"` to the `<body>` tag:
+If you want to disable automatic tracking for a specific page while still keeping other tracking features active, add `data-ga4-event="no-pageview"` (or the shorthand `data-ga4="no-pageview"`) to the `<body>` tag:
 
 ```html
 <body data-ga4-event="no-pageview">
+<!-- or -->
+<body data-ga4="no-pageview">
 ```
 
 ### <a name="visitor-user-identification"></a>Visitor & User Identification
@@ -330,13 +372,7 @@ $this->dispatch('ga4-event', 'button_click', [
 
 ### <a name="javascript-event-bridging"></a>JavaScript Event Bridging
 
-To send events from JavaScript, first include the tracking script in your layout using the Blade directive:
-
-```html
-@Ga4MarketingScript
-```
-
-This directive renders the tracking scripts and ensures they are only included once. You can then use the `window.ga4Event` helper:
+To send events from JavaScript, you can use the `window.ga4Event` helper:
 
 ```javascript
 ga4Event('js_button_click', {
@@ -344,21 +380,11 @@ ga4Event('js_button_click', {
 });
 ```
 
-#### <a name="vite-bundling"></a>Vite & Bundling
-
-If you prefer to bundle the tracking logic with your application, you can import the tracker from the package resources:
-
-```javascript
-import { ga4Event } from '../../vendor/schenke-io/laravel-ga4-marketing/resources/js/ga4-tracker';
-
-ga4Event('custom_event', { key: 'value' });
-```
-
 ### <a name="visibility-tracking"></a>Visibility Tracking
 
 #### <a name="declarative-tracking"></a>Declarative Tracking
 
-The easiest way to track visibility is by adding `data-ga4-event="scroll"` to any element. You can specify the area name using `data-ga4-area`:
+The easiest way to track visibility is by adding `data-ga4-event="scroll"` (or `data-ga4="scroll"`) to any element. You can specify the area name using `data-ga4-area`:
 
 ```html
 <div data-ga4-event="scroll" data-ga4-area="pricing_table">
@@ -374,7 +400,7 @@ You can automatically track clicks on any element using declarative data attribu
 
 #### <a name="outbound-link-tracking"></a>Outbound Link Tracking
 
-To track clicks to external domains, use `data-ga4-event="outbound"` on an `<a>` tag:
+To track clicks to external domains, use `data-ga4-event="outbound"` (or `data-ga4="outbound"`) on an `<a>` tag:
 
 ```html
 <a href="https://example.com" data-ga4-event="outbound">External Link</a>
@@ -384,7 +410,7 @@ This automatically sets the event name to `click`, sets `outbound: true`, and ex
 
 #### <a name="custom-click-events"></a>Custom Click Events
 
-Use `data-ga4-event` for the event name and `data-ga4-params` for optional parameters (as a JSON string):
+Use `data-ga4-event` (or `data-ga4`) for the event name and `data-ga4-params` for optional parameters (as a JSON string):
 
 ```html
 <button data-ga4-event="signup_click" data-ga4-params='{"source": "hero"}'>

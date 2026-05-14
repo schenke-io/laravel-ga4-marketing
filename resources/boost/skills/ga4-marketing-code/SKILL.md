@@ -47,6 +47,7 @@ Magic methods map positional arguments to GA4 parameters via `EventMapper`:
 | `purchase` | `string $transactionId, array $items, ?float $value, ?string $currency, ?float $tax, ?float $shipping, ?string $coupon` |
 | `scroll` | `int $percentScrolled` |
 | `fileDownload` | `string $fileName, ?string $fileExtension, ?string $linkUrl, ?string $linkText, ?string $linkId, ?string $linkClasses, ?string $linkDomain` |
+| `calculatorUsed` | `array $params` |
 
 ```php
 $this->ga4->login('google');
@@ -64,6 +65,7 @@ Set `GA4_EVENT_HANDLING=job` in `.env` to also queue JS-triggered (front-end) ev
 
 ### Middlewares
 The package includes several middlewares for automatic tracking:
+- `HandleVisitorCookie`: (Automatic) Manages persistent visitor identification.
 - `TrackPageView`: Tracks page views on GET requests. Useful for environments without JavaScript.
 - `TrackOutboundLink`: Tracks redirects to external domains.
 - `CaptureAdParameters`: Captures Google Ad IDs (`gclid`, etc.) for attribution.

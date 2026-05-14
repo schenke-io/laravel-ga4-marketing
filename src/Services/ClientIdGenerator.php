@@ -4,10 +4,19 @@ namespace SchenkeIo\LaravelGa4Marketing\Services;
 
 use Illuminate\Http\Request;
 
+/**
+ * Service for generating and retrieving GA4 Client IDs.
+ *
+ * This class handles the logic for persistent visitor identification
+ * using cookies and hashed user IDs for authenticated users.
+ */
 class ClientIdGenerator
 {
     protected ?string $cachedClientId = null;
 
+    /**
+     * Create a new ClientIdGenerator instance.
+     */
     public function __construct(
         protected ?Request $request = null,
         private readonly string $salt = ''
@@ -42,6 +51,9 @@ class ClientIdGenerator
         return $this->cachedClientId = (is_string($cookieValue) ? $cookieValue : null) ?: $this->generate();
     }
 
+    /**
+     * Get a hashed version of the authenticated user's ID.
+     */
     public function getHashedUserId(): string
     {
         return sha1('user-'.auth()->id().$this->salt);

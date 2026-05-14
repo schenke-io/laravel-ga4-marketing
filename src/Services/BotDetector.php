@@ -2,6 +2,12 @@
 
 namespace SchenkeIo\LaravelGa4Marketing\Services;
 
+/**
+ * Service for detecting search engine bots and crawlers.
+ *
+ * This class identifies common bots based on their User-Agent strings,
+ * allowing the application to skip tracking for non-human traffic.
+ */
 class BotDetector
 {
     private const BOT_LIST = 'Googlebot,Bingbot,Slurp,DuckDuckBot,Baiduspider,YandexBot,facebot,facebookexternalhit,ia_archiver,AdsBot-Google,Applebot,Embedly,Pinterestbot,Slackbot,Twitterbot,WhatsApp,ZoominfoBot,AhrefsBot,SemrushBot,DotBot,Rogerbot,MJ12bot,PetalBot,Bytespider,SEOkicks,UptimeRobot,Pingdom';
@@ -20,13 +26,9 @@ class BotDetector
             return false;
         }
 
-        foreach ($this->getBotBlacklist() as $bot) {
-            if (stripos($userAgent, $bot) !== false) {
-                return true;
-            }
-        }
+        $pattern = '/('.implode('|', array_map(fn ($bot) => preg_quote($bot, '/'), $this->getBotBlacklist())).')/i';
 
-        return false;
+        return (bool) preg_match($pattern, $userAgent);
     }
 
     /**

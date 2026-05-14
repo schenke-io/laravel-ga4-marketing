@@ -5,8 +5,23 @@ namespace SchenkeIo\LaravelGa4Marketing\Services;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 
+/**
+ * Service for managing GA4 sessions and user engagement data.
+ *
+ * This class handles the creation and persistence of session IDs,
+ * calculation of engagement time, and storage of Google Ad IDs
+ * using the application's cache.
+ */
 class SessionManager
 {
+    /**
+     * @var array<string, array{session_id: string, engagement_time_msec: int, is_new_session: bool, is_new_user: bool, google_ad_id: ?array{type: string, value: string}}>
+     */
+    protected array $sessionDataCache = [];
+
+    /**
+     * Create a new SessionManager instance.
+     */
     public function __construct(
         protected CacheRepository $cache,
         protected ConfigRepository $config
@@ -19,6 +34,10 @@ class SessionManager
      */
     public function getSessionData(string $clientId): array
     {
+        if (isset($this->sessionDataCache[$clientId])) {
+            return $this->sessionDataCache[$clientId];
+        }
+
         $cacheKey = $this->getCacheKey($clientId);
         $isNewUser = ! $this->cache->has($cacheKey);
         /** @var array{session_id?: string, last_active?: int, google_ad_id?: array{type: string, value: string}} $sessionData */
@@ -40,13 +59,15 @@ class SessionManager
         $sessionData['last_active'] = $now;
         $this->cache->put($cacheKey, $sessionData, $lifetime);
 
-        return [
+        $result = [
             'session_id' => $sessionId,
             'engagement_time_msec' => max(0, $engagementTime),
             'is_new_session' => $isNewSession,
             'is_new_user' => $isNewUser,
             'google_ad_id' => $sessionData['google_ad_id'] ?? null,
         ];
+
+        return $this->sessionDataCache[$clientId] = $result;
     }
 
     /**
@@ -63,6 +84,7 @@ class SessionManager
         ];
         $lifetime = (int) $this->config->get('ga4-marketing.ga4.session_lifetime', 1800);
         $this->cache->put($cacheKey, $sessionData, $lifetime);
+        unset($this->sessionDataCache[$clientId]);
     }
 
     /**
@@ -91,6 +113,9 @@ class SessionManager
         return max(0, $engagementTime);
     }
 
+    /**
+     * Get the cache key for a given client ID.
+     */
     private function getCacheKey(string $clientId): string
     {
         return "ga_last_activity_{$clientId}";

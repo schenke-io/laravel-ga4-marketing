@@ -23,9 +23,18 @@ Or as a component:
 <x-ga4-marketing::ga4-marketing />
 ```
 
+### Vite / Bundling Integration
+If you bundle the tracker (e.g., in `app.js`), use the config-only directive:
+```blade
+@Ga4MarketingConfig
+```
+This skips rendering the `<script>` tag but provides the necessary initialization parameters. It automatically suppresses the client-side `page_view` if already tracked on the server.
+
 On init, the tracker automatically fires a `page_view` event. To suppress it on a specific page:
 ```html
 <body data-ga4="no-pageview">
+<!-- or -->
+<body data-ga4-event="no-pageview">
 ```
 
 ### Data Attributes
@@ -67,7 +76,10 @@ window.ga4Marketing.sendEvent('purchase', { value: 99.99, currency: 'USD' });
 
 ## Middlewares
 
-### Client-Side Attribution
+### Visitor Attribution
+The `handle-visitor-cookie` middleware (pushed to the `web` group by default) manages a persistent `visitor` cookie for anonymous users.
+
+### Client-Side Ad Attribution
 The `capture-ad-parameters` middleware reads `gclid`, `wbraid`, and `gbraid` from the URL and stores them in the session for the duration of the visit.
 ```php
 Route::middleware(['web', 'capture-ad-parameters'])->group(function () {

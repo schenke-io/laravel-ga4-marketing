@@ -2,6 +2,13 @@
 
 namespace SchenkeIo\LaravelGa4Marketing\Services;
 
+/**
+ * Service for validating and normalizing GA4 event names.
+ *
+ * This class ensures that event names comply with Google Analytics 4
+ * naming conventions, including snake_case conversion, reserved
+ * prefix removal, and character restrictions.
+ */
 class EventValidator
 {
     /**

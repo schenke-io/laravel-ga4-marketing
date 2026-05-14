@@ -11,7 +11,7 @@ This package provides a simple way to integrate Google Analytics 4 (GA4) event t
 - **Privacy-first Hashing**: Securely generate hashed User IDs for authenticated users, which automatically overwrite the anonymous visitor cookie.
 - **Hybrid Event Handling**: Support for both immediate API calls and queued background jobs for event processing.
 - **JS-Triggered Tracking**: Client-side triggers for events, reducing server-side overhead and improving accuracy.
-- **Page View Component**: Simple Blade component to manually track page views including page location, title, and visitor language.
+- **Automatic Tracking**: Easy integration via Blade directives (`@Ga4MarketingScript` or `@Ga4MarketingConfig`) for automatic page view and engagement tracking.
 - **Bot Filtering**: Built-in filtering to prevent common bots and crawlers from polluting your analytics.
 - **Visibility Tracking**: Blade component to track when elements become visible using IntersectionObserver.
 - **Non-blocking Execution**: Events are sent with a short timeout and exceptions are caught to ensure your application remains responsive.

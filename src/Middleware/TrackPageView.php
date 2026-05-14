@@ -6,6 +6,12 @@ use Closure;
 use Illuminate\Http\Request;
 use SchenkeIo\LaravelGa4Marketing\Services\AnalyticsService;
 
+/**
+ * Middleware to track page views via the server-side.
+ *
+ * This middleware sends a page_view event to GA4 for regular
+ * GET requests that are not AJAX calls.
+ */
 class TrackPageView
 {
     public function __construct(protected AnalyticsService $analyticsService) {}

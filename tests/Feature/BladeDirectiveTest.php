@@ -14,4 +14,13 @@ class BladeDirectiveTest extends TestCase
         $this->assertStringContainsString('<script', $view);
         $this->assertStringContainsString('ga4Marketing', $view);
     }
+
+    public function test_ga4_marketing_config_directive_renders_correctly()
+    {
+        $view = Blade::render('@Ga4MarketingConfig');
+
+        $this->assertStringContainsString('<script', $view);
+        $this->assertStringContainsString('ga4Marketing.init', $view);
+        $this->assertStringContainsString('autoPageView: true', $view);
+    }
 }

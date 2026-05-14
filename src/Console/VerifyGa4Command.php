@@ -6,12 +6,22 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 
+/**
+ * Console command to verify the GA4 connection.
+ *
+ * This command sends a test event to the Google Analytics debug
+ * validation server to ensure the Measurement ID and API Secret
+ * are correctly configured and the connection is healthy.
+ */
 class VerifyGa4Command extends Command
 {
     protected $signature = 'ga4-marketing:verify-ga4';
 
     protected $description = 'Verify GA4 connection using the debug validation server';
 
+    /**
+     * Execute the console command.
+     */
     public function handle(): int
     {
         $measurementId = Config::get('ga4-marketing.ga4.measurement_id');

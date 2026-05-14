@@ -24,6 +24,7 @@ describe('ga4-tracker.js', () => {
 
         delete window.ga4Marketing;
         delete window.ga4Event;
+        delete window.ga4MarketingInitialized;
         
         // Mock fetch
         global.fetch = vi.fn(() =>
@@ -39,6 +40,14 @@ describe('ga4-tracker.js', () => {
     it('initializes with default config', () => {
         window.ga4Marketing.init();
         expect(window.ga4Marketing.config.route).toBe('/ga4-marketing/event');
+    });
+
+    it('prevents double initialization', () => {
+        window.ga4Marketing.init({ route: '/first' });
+        expect(window.ga4Marketing.config.route).toBe('/first');
+        
+        window.ga4Marketing.init({ route: '/second' });
+        expect(window.ga4Marketing.config.route).toBe('/first'); // remains first
     });
 
     it('can override config during init', () => {

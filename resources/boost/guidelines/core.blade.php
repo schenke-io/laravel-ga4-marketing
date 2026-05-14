@@ -17,6 +17,7 @@
         </div>
 
         <div class="bg-gray-100 p-3 rounded text-sm font-mono text-gray-700 break-all">
+            &commat;Ga4MarketingScript<br>
             &lt;x-ga4-marketing::ga4-marketing /&gt;
         </div>
 

@@ -34,6 +34,9 @@ php artisan vendor:publish --tag=ga4-marketing-config
 | `GA4_RATE_LIMIT_ENABLED` | `true` | Enable per-client rate limiting. |
 | `GA4_RATE_LIMIT_MAX_ATTEMPTS` | `30` | Max events per window before throttling. |
 | `GA4_RATE_LIMIT_DECAY_SECONDS` | `60` | Rate limit window duration in seconds. |
+| `GA4_COOKIE_NAME` | `visitor` | Name of the persistent visitor cookie. |
+| `GA4_COOKIE_LIFETIME` | `144000` | Lifetime of the visitor cookie in minutes. |
+| `GA4_CLIENT_FROM_USER_ID` | `false` | Use hashed User ID as client ID when authenticated. |
 
 Credentials can also be set via `config/services.php`:
 ```php
@@ -47,6 +50,7 @@ The package registers the following aliases for use in your routes:
 - `capture-ad-parameters`: Captures Google Ad IDs from URL query.
 - `track-page-view`: Server-side page view tracking (GET requests).
 - `track-outbound-link`: Server-side tracking for redirects to external hosts.
+- `handle-visitor-cookie`: Manages the persistent visitor identification cookie.
 
 ## Verification
 

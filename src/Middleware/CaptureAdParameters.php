@@ -6,6 +6,10 @@ use Closure;
 use Illuminate\Http\Request;
 use SchenkeIo\LaravelGa4Marketing\Services\AnalyticsService;
 
+/**
+ * Middleware to capture Google Ad parameters (gclid, dclid, wbraid, gbraid)
+ * from the request and store them in the session/cache.
+ */
 class CaptureAdParameters
 {
     public function __construct(protected AnalyticsService $ga4Service) {}

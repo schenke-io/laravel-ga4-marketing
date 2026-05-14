@@ -6,6 +6,11 @@ const ga4Marketing = {
     },
 
     init: function(config = {}) {
+        if (window.ga4MarketingInitialized) {
+            return;
+        }
+        window.ga4MarketingInitialized = true;
+
         this.config = Object.assign(this.config, config);
 
         // 1. Page View

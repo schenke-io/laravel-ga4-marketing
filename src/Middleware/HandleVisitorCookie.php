@@ -7,6 +7,12 @@ use Illuminate\Http\Request;
 use SchenkeIo\LaravelGa4Marketing\Services\ClientIdGenerator;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Middleware to ensure the visitor has a unique GA4 Client ID.
+ *
+ * This middleware checks for an existing visitor cookie and creates
+ * one if it doesn't exist, ensuring persistent visitor tracking.
+ */
 class HandleVisitorCookie
 {
     public function __construct(protected ClientIdGenerator $clientIdGenerator) {}

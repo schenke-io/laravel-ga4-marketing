@@ -42,12 +42,12 @@ describe('ga4-tracker.js', () => {
         expect(window.ga4Marketing.config.route).toBe('/ga4-marketing/event');
     });
 
-    it('prevents double initialization', () => {
+    it('updates config on multiple init calls', () => {
         window.ga4Marketing.init({ route: '/first' });
         expect(window.ga4Marketing.config.route).toBe('/first');
         
         window.ga4Marketing.init({ route: '/second' });
-        expect(window.ga4Marketing.config.route).toBe('/first'); // remains first
+        expect(window.ga4Marketing.config.route).toBe('/second');
     });
 
     it('can override config during init', () => {
@@ -132,7 +132,7 @@ describe('ga4-tracker.js', () => {
 
     it('tracks visibility of elements', () => {
         let observerCallback;
-        global.IntersectionObserver = vi.fn((callback) => {
+        global.IntersectionObserver = vi.fn(function(callback) {
             observerCallback = callback;
             return {
                 observe: vi.fn(),

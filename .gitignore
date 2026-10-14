@@ -61,3 +61,5 @@ CLAUDE.md
 AGENTS.md
 .claude
 .mcp.json
+/.phpstorm
+/.continue

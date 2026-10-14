@@ -23,18 +23,18 @@
         "illuminate/routing": "^12.0 | ^13.0",
         "illuminate/support": "^12.0 | ^13.0",
         "illuminate/validation": "^12.0 | ^13.0",
-        "livewire/livewire": "^4.0",
-        "spatie/laravel-package-tools": "^1.0"
+        "livewire/livewire": "^4.4",
+        "spatie/laravel-package-tools": "^1.93"
     },
     "require-dev": {
         "larastan/larastan": "^3.0",
         "laravel/boost": "*",
+        "laravel/mcp": "^0.9.5",
         "laravel/pint": "^1.24",
         "orchestra/testbench": "^10.9 | ^11.0",
         "pestphp/pest": "^4.0",
         "pestphp/pest-plugin-browser": "^4.1",
         "schenke-io/packaging-tools": "^0.2",
-        "schenke-io/test-output-formatter": "^0.0.4",
         "spatie/laravel-ray": "^1.40"
     },
     "extra": {
@@ -112,6 +112,5 @@
             "php-http/discovery": true
         }
     },
-    "minimum-stability": "dev",
-    "prefer-stable": true
+    "minimum-stability": "stable"
 }
